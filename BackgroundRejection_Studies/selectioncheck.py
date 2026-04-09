@@ -34,12 +34,13 @@ def dump_summary_csv(job_id,event_stats,pass_stats,out_dir= ".",**meta):
     print("Output summary saved in", path)
 
 def ip_category(ip_elem):
-    """Return which sub-sample the event belongs to."""
-    
+    """Return which sub-sample the event belongs to."""    
     if ip_elem.startswith(("LiSc", "VetoInnerWall", "VetoOuterWall","VetoVerticalRib","VetoLongitRib")):
         return "vesselCase"
     if ip_elem.startswith("DecayVacuum"):
         return "heliumCase"
+    if ip_elem.startswith("lastBitMuonShield"):
+        return "lastBitMagnetCase"
     
     return "all"       
 
@@ -127,6 +128,79 @@ def helium_rhoL(event, track_index=0,
 
     return rho_he * L_he  # g/cm^2
 
+def iron_rhoL(event, track_index=0,
+              rho_fe=7.87, tol=6e-5, eps=1e-4, max_hops=256):
+    
+    """
+    Return iron-only rho*L (g/cm^2) for a DIS vertex.
+    Uses TGeoNavigator to follow the track in both directions from the vertex.
+    """
+
+    nav = ROOT.gGeoManager.GetCurrentNavigator()
+    if not nav:
+        raise RuntimeError("No TGeoNavigator; load geometry first.")
+
+    # --- get vertex & direction ---
+    v = ROOT.TVector3()
+    event.MCTrack[track_index].GetStartVertex(v)
+    xv, yv, zv = v.X(), v.Y(), v.Z()
+
+    px = event.MCTrack[track_index].GetPx()
+    py = event.MCTrack[track_index].GetPy()
+    pz = event.MCTrack[track_index].GetPz()
+    pm = math.sqrt(px*px + py*py + pz*pz) or 1.0
+    dx, dy, dz = px/pm, py/pm, pz/pm
+
+    # --- helper: is this point in iron? ---
+    def in_iron(x, y, z):
+        nav.SetCurrentPoint(x, y, z)
+        nav.FindNode()
+        node = nav.GetCurrentNode()
+        if not node: return False
+        try:
+            rho = node.GetMedium().GetMaterial().GetDensity()
+        except Exception:
+            return False
+        return abs(rho - rho_fe) <= tol
+
+    # quick check that vertex is in iron (nudge if needed)
+    if not (in_iron(xv, yv, zv) or
+            in_iron(xv + dx*eps, yv + dy*eps, zv + dz*eps) or
+            in_iron(xv - dx*eps, yv - dy*eps, zv - dz*eps)):
+        return 0.0
+
+    # --- helper: integrate iron length from point along direction ---
+    def iron_len_from(x0, y0, z0, dx, dy, dz):
+        nav.SetCurrentPoint(x0 + dx*eps, y0 + dy*eps, z0 + dz*eps)
+        nav.SetCurrentDirection(dx, dy, dz)
+        nav.FindNode()
+        total, seen_fe = 0.0, False
+        for _ in range(max_hops):
+            node = nav.GetCurrentNode()
+            if not node: break
+            try:
+                rho = node.GetMedium().GetMaterial().GetDensity()
+            except Exception:
+                rho = -1
+            in_fe = abs(rho - rho_fe) <= tol
+            nav.FindNextBoundaryAndStep()
+            step = nav.GetStep()
+            if in_fe:
+                total += step
+                seen_fe = True
+            elif seen_fe:
+                break
+            if nav.IsOutside(): break
+            cp = nav.GetCurrentPoint()
+            nav.SetCurrentPoint(cp[0] + dx*eps, cp[1] + dy*eps, cp[2] + dz*eps)
+        return total
+
+    # --- integrate forward + backward from vertex ---
+    L_fwd = iron_len_from(xv, yv, zv,  dx,  dy,  dz)
+    L_bwd = iron_len_from(xv, yv, zv, -dx, -dy, -dz)
+    L_fe  = L_fwd + L_bwd
+
+    return rho_fe * L_fe  # g/cm^2
 
 def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDIS=None,finalstate='None'):
     
@@ -145,7 +219,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
         ip_low, ip_high = 0.0, float(IP_CUT)
 
     print(f"IP_CUT set as [{ip_low},{ip_high})\n\n")
-    
+
     file_name = glob.glob(f"{options.path}/{options.jobDir}/ship.conical*_rec.root")[0]
     
     f = ROOT.TFile.Open(file_name,"read")
@@ -310,7 +384,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
         combined_GNN45,   combined_other
     ))
 
-    cats = ("all", "vesselCase", "heliumCase")
+    cats = ("all", "vesselCase", "heliumCase", "lastBitMagnetCase")
 
     #--------------------------------------------------------------------------------------------------------------
 
@@ -404,6 +478,10 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
         
         if cat=='heliumCase':
             corrected_rhoL= helium_rhoL(event)
+            event_weight  = weight_function(event,w_DIS=corrected_rhoL)
+            rhoL=corrected_rhoL
+        elif cat=='lastBitMagnetCase':
+            corrected_rhoL= iron_rhoL(event)
             event_weight  = weight_function(event,w_DIS=corrected_rhoL)
             rhoL=corrected_rhoL
         else:

@@ -36,7 +36,7 @@ class AnalysisContext:
         self.ship_geo = unpickler.load("ShipGeo")
 
         fairship = ROOT.gSystem.Getenv("FAIRSHIP")
-
+        
         if self.ship_geo.DecayVolumeMedium == "helium":
             with open(fairship + "/geometry/veto_config_helium.yaml") as file:
                 config = yaml.safe_load(file)

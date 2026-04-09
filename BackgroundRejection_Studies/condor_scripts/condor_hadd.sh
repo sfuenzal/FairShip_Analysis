@@ -9,7 +9,7 @@ source /cvmfs/ship.cern.ch/24.10/setUp.sh
 #######################################################################################
 
 OUT="combined_selectionparameters_${KEY}.root"
-FLAVOURS=( all heliumCase vesselCase )
+FLAVOURS=( all heliumCase vesselCase lastBitMagnetCase )
 
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT

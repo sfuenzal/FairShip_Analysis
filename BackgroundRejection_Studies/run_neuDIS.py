@@ -8,7 +8,7 @@ import shipunit as u
 import sys, argparse
 
 
-def calcweight_neuDIS(event,SHiP_running=15,N_gen=6000*19969,w_DIS=None):#6k events per job, 19.993k jobs #For Iaroslava productions 2024,N_gen=100000*98): #Each file has 100k events each change N_gen according to files(1) used for analysis, and 98 successful jobs
+def calcweight_neuDIS(event,SHiP_running=15,N_gen=1000*1000,w_DIS=None):#6k events per job, 19.993k jobs #For Iaroslava productions 2024,N_gen=100000*98): #Each file has 100k events each change N_gen according to files(1) used for analysis, and 98 successful jobs
     
     if w_DIS==None:
         w_DIS    =  event.MCTrack[0].GetWeight()
@@ -106,7 +106,7 @@ def TDC_correction(event,candidate):#resolve time bug in neuDIS production. to b
 
 p = argparse.ArgumentParser(description=__doc__)
 #p.add_argument("-p", "--path", default="/eos/experiment/ship/user/Iaroslava/train_sample_N2024_big/")
-p.add_argument("-p", "--path", default="/eos/experiment/ship/simulation/bkg/NeutrinoDIS_2024helium/10864335/")
+p.add_argument("-p", "--path", default="/eos/home-s/sfuenzal/SHiP_background_studies_neuDIS_vetoTaskForce/input_test_lastbitmuonshield/8499348/") #job_0
 
 g = p.add_mutually_exclusive_group(required=True)
 

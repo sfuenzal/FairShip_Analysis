@@ -37,7 +37,7 @@ group2 = parser.add_mutually_exclusive_group(required=True)
 group2.add_argument("--all"        , dest="keyword", action= "store_const",const="all"          ,help="Merge job summaries for interactions anywhere")
 group2.add_argument("--vesselCase" , dest="keyword", action= "store_const",const="vesselCase"   ,help="Merge job summaries for interactions only in the SBT vessel")
 group2.add_argument("--heliumCase" , dest="keyword", action= "store_const",const="heliumCase"   ,help="Merge job summaries for interactions only in the decay volume (He medium)")
-
+group2.add_argument("--lastBitMagnetCase" , dest="keyword", action= "store_const",const="lastBitMagnetCase"   ,help="Merge job summaries for interactions only in the last bit of the muon shield (Fe medium)")
 
 options = parser.parse_args()
 
@@ -54,7 +54,7 @@ main_path=options.main_path
 if not options.analysis_channel:
     options.analysis_channel=''
 
-foldername=f'{options.foldername}/{options.analysis_channel}'
+foldername=f'{options.foldername}_{options.analysis_channel}'
 
 if options.foldername=="muonDIS":
     pathlist = [
@@ -63,8 +63,8 @@ if options.foldername=="muonDIS":
     ]
 else:
     pathlist = [
-                f'{main_path}/{foldername}/'
-                ]
+        f'{main_path}/{foldername}/'
+    ]
 
 print(pathlist)
 
@@ -98,7 +98,7 @@ def fmt(value, denom, pct_fmt=".2f"):
 
 def load_csvs(pathlist, keyword):
     csvs = [p for base in pathlist
-                  for p in Path(base).glob(f"job_*/selection_summary_{keyword}*.csv")]
+            for p in Path(base).glob(f"job_*/selection_summary_{keyword}*.csv")]
 
     if not csvs:
         raise FileNotFoundError(f"No CSVs matching {keyword!r} under {pathlist}")
