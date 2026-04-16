@@ -37,13 +37,8 @@ class AnalysisContext:
 
         fairship = ROOT.gSystem.Getenv("FAIRSHIP")
         
-        if self.ship_geo.DecayVolumeMedium == "helium":
-            with open(fairship + "/geometry/veto_config_helium.yaml") as file:
-                config = yaml.safe_load(file)
-                self.veto_geo = AttrDict(config)
-        
-        if self.ship_geo.DecayVolumeMedium == "vacuums":
-            with open(fairship + "/geometry/veto_config_vacuums.yaml") as file:
+        if self.ship_geo.DecayVolumeMedium == "dummy_SBT":
+            with open(fairship + "/geometry/veto_config_dummy_SBT_sensitive.yaml") as file:
                 config = yaml.safe_load(file)
                 self.veto_geo = AttrDict(config)
         
@@ -530,16 +525,22 @@ class veto_tasks():
         return ROOT.gRandom.Rndm() < self.SBTefficiency               
     
 
-    def SBTcell_map(self): #provides a cell map with index in [0,nCells] for each cell.
-       fGeo = ROOT.gGeoManager
-       detList = {}
-       LiSC = fGeo.GetTopVolume().GetNode('DecayVolume_1').GetVolume().GetNode('T2_1').GetVolume().GetNode('VetoLiSc_0')
-       index = -1
-       for LiSc_cell in LiSC.GetVolume().GetNodes():
-          index += 1
-          name = LiSc_cell.GetName()
-          detList[index] = name[-6:]
-       return detList
+    def SBTcell_map(self):
+        fGeo = ROOT.gGeoManager
+        detList = {}
+        vetoWall = fGeo.GetTopVolume().GetNode('DecayVolume_1').GetVolume().GetNode('T2_1').GetVolume().GetNode('VetoInnerWall_0')
+
+        index = -1
+        for vetoWall_cell in vetoWall.GetVolume().GetNodes():
+            index += 1
+            name = vetoWall_cell.GetName()
+            
+            # Extract ID (example: last number after "_")
+            det_id = name.split('_')[-1]
+
+            detList[index] = det_id
+
+        return detList
 
     def SBT_decision(self,mcParticle=None,detector='liquid',threshold=45,offset=0,Digi_SBTHits=None):
         """Implementation of Basic SBT veto. """
@@ -597,7 +598,7 @@ class veto_tasks():
         
         Extrapolate a fitted GenFit track backwards onto SBT.
         Uniformly sample the trajectory in n_steps, stop when we first enter 
-        any LiSc volume, and then match to the nearest digi hits within the tolerance (tol_cm).
+        any VetoInnerWall volume, and then match to the nearest digi hits within the tolerance (tol_cm).
 
         Returns:
           best_hits, xs, ys, zs
@@ -644,7 +645,7 @@ class veto_tasks():
             xs.append(p.X()); ys.append(p.Y()); zs.append(p.Z())
 
             node = nav.FindNode(p.X(), p.Y(), p.Z())
-            if node and node.GetName().startswith(("LiSc", "VetoInnerWall", "VetoOuterWall","VetoVerticalRib","VetoLongitRib")):
+            if node and node.GetName().startswith(("VetoInnerWall")):
                 predPos = p
                 predMom = state.getMom()
                 break
@@ -657,7 +658,7 @@ class veto_tasks():
                 break
             
 
-        # if we never hit LiSc, still push to the first boundary
+        # if we never hit VetoInnerWall, still push to the first boundary
         
         if predPos is None:
             # reset & do one boundary‐stop propagate
