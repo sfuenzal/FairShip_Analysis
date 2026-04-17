@@ -115,7 +115,7 @@ main_path=options.main_path
 if not options.analysis_channel:
     options.analysis_channel=''
 
-foldername=f'{options.foldername}/{options.analysis_channel}'
+foldername=f'{options.foldername}_{options.analysis_channel}'
 
 if options.foldername=="muonDIS":
     pathlist = [
