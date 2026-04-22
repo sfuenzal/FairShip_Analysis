@@ -7,9 +7,10 @@ import sys, argparse
 import pandas as pd
 
 def calcweight_muonDIS(event,SHiP_running=15,w_DIS=None):
-    """Calculate event weight in 15 years."""    
+    """Calculate event weight in 15 years."""
     
-    w_mu=event.MCTrack[0].GetWeight()  #weight of the incoming muon*DIS multiplicity normalised to a full spill   sum(w_mu) = nMuons_perspill = number of muons in a spill. w_mu is not the same as N_muperspill/N_gen, where N_gen = nEvents*DISmultiplicity ( events enhanced in Pythia to increase statistics) .
+    #w_mu=event.MCTrack[0].GetWeight()  #weight of the incoming muon*DIS multiplicity normalised to a full spill   sum(w_mu) = nMuons_perspill = number of muons in a spill. w_mu is not the same as N_muperspill/N_gen, where N_gen = nEvents*DISmultiplicity ( events enhanced in Pythia to increase statistics) .
+    w_mu=1.0 # uniform distribution weights
 
     cross=event.CrossSection
     
