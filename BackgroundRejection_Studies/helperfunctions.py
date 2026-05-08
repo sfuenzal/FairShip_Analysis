@@ -68,6 +68,10 @@ class selection_check:
         self.ship_geo         = ctx.ship_geo
         self.veto_geo         = ctx.veto_geo
 
+    #def get_momenta_mother(self, candidate):
+    #    d1, d2 = candidate.GetDaughter(0), candidate.GetDaughter(1)
+    #    d1_mc, d2_mc = self.tree.fitTrack2MC[d1], self.tree.fitTrack2MC[d2]
+    #    print(d1_mc.GetPdgCode(), d2_mc.GetPdgCode())
 
     def define_candidate_time(self, candidate,offset=0):
         """Calculate time associated with the candidate decay vertex using strawtubes MCPoint info."""

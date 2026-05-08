@@ -432,7 +432,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
             ut.bookHist(hist_dict[c], f"{c}_rho_l", "rho_l" , 1000, 0, 1000)
         
         pre = f"{c}_"
-        
+
         ut.bookHist(hist_dict[c], pre +"candidate_time","candidate time @ decay vertex; ns",300,0, 300)
         ut.bookHist(hist_dict[c], pre +"impact_parameter", "Impact parameter; cm", 500, 0, 500)
         ut.bookHist(hist_dict[c], pre +"dist_to_innerwall", "Distance to inner wall; cm", 200, 0, 100)
@@ -447,13 +447,14 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
         ut.bookHist(hist_dict[c], pre +"y_pos", "Candidate y pos; cm", 300,  -300, 300)
         ut.bookHist(hist_dict[c], pre +"z_pos", "Candidate z pos; cm", 6000, -3000, 3000)
         ut.bookHist(hist_dict[c], pre +"nSBThits", "nSBThits>45MeV for events passing selection; nSBThits; ",100,0,100)
-
         
+        ut.bookHist(hist_dict[c], pre +"input_muon_total_momenta_forSimCandidates", "Muon Momenta (sim); P GeV; Entries", 400, 0, 400)
+        ut.bookHist(hist_dict[c], pre +"input_muon_total_momenta_forRecoCandidates", "Muon Momenta (reco); P GeV; Entries", 400, 0, 400)
 
     for event_nr, event in enumerate(tree):
                 
         if options.testing_code and event_nr>99: continue
-        
+
         if event_nr%100==0:
             print(f"Event {event_nr}")
         
@@ -504,10 +505,13 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
             hist_dict[c][pre+"rho_l"].Fill(rhoL)
     
             event_stats[c]["simulated"][event_nr] = event_weight * scalefactor[c]
-    
+            hist_dict[c][pre+"input_muon_total_momenta_forSimCandidates"].Fill(event.MCTrack[0].GetP())
+            
             if len(event.Particles):
                 event_stats[c]["reconstructed"][event_nr] = event_weight * scalefactor[c]
-
+                hist_dict[c][pre+"input_muon_total_momenta_forRecoCandidates"].Fill(event.MCTrack[0].GetP())
+                
+                
         for candidate_id_in_event, signal in enumerate(event.Particles):
             
             selection_list =  defaultdict(dict) 
