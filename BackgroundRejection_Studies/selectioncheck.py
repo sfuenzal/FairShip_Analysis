@@ -392,7 +392,7 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
     
     pos_trees = {c: {} for c in cats}
     pos_bufs  = {c: {} for c in cats}
-
+        
     def _san(s):  # safe tree name
         return s.replace('[','').replace(']','').replace(' ','').replace('+','_')
 
@@ -448,7 +448,8 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
         ut.bookHist(hist_dict[c], pre +"z_pos", "Candidate z pos; cm", 6000, -3000, 3000)
         ut.bookHist(hist_dict[c], pre +"nSBThits", "nSBThits>45MeV for events passing selection; nSBThits; ",100,0,100)
 
-        
+        ut.bookHist(hist_dict[c], pre +"input_muon_total_momenta_forSimCandidates", "Muon Momenta (sim); P GeV; Entries", 400, 0, 400)
+        ut.bookHist(hist_dict[c], pre +"input_muon_total_momenta_forRecoCandidates", "Muon Momenta (reco); P GeV; Entries", 400, 0, 400)
 
     for event_nr, event in enumerate(tree):
                 
@@ -502,11 +503,13 @@ def main(weight_function,IP_CUT = 250,fixTDC=None,fix_candidatetime=None,fix_nDI
             pre = f"{c}_"
 
             hist_dict[c][pre+"rho_l"].Fill(rhoL)
-    
+            
             event_stats[c]["simulated"][event_nr] = event_weight * scalefactor[c]
-    
+            hist_dict[c][pre+"input_muon_total_momenta_forSimCandidates"].Fill(event.MCTrack[0].GetP())
+            
             if len(event.Particles):
                 event_stats[c]["reconstructed"][event_nr] = event_weight * scalefactor[c]
+                hist_dict[c][pre+"input_muon_total_momenta_forRecoCandidates"].Fill(event.MCTrack[0].GetP())
 
         for candidate_id_in_event, signal in enumerate(event.Particles):
             
